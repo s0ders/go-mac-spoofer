@@ -1,0 +1,54 @@
+package mac
+
+import (
+	"reflect"
+	"testing"
+)
+
+func TestValidate(t *testing.T) {
+	type table struct {
+		mac []byte
+		expect bool
+	}
+
+	tests := []table{
+		// 00-00-00-00-00
+		{[]byte{0x30, 0x30, 0x3a, 0x30, 0x30, 0x3a, 0x30, 0x30, 0x3a, 0x30, 0x30, 0x3a, 0x30, 0x30, 0x3a, 0x30, 0x30}, true},
+		// 00:00:00:00:00
+		{[]byte{0x30, 0x30, 0x2d, 0x30, 0x30, 0x2d, 0x30, 0x30, 0x2d, 0x30, 0x30, 0x2d, 0x30, 0x30, 0x2d, 0x30, 0x30}, true},
+		// fg:00:00:00:00
+		{[]byte{0x66, 0x67, 0x2d, 0x30, 0x30, 0x2d, 0x30, 0x30, 0x2d, 0x30, 0x30, 0x2d, 0x30, 0x30, 0x2d, 0x30, 0x30}, false},
+		// ff:00:00:00:ff
+		{[]byte{0x66, 0x66, 0x2d, 0x30, 0x30, 0x2d, 0x30, 0x30, 0x2d, 0x30, 0x30, 0x2d, 0x30, 0x30, 0x2d, 0x66, 0x66}, false},
+	}
+
+	for _, test := range tests {
+		got := validate(test.mac)
+		if got != test.expect {
+			t.Errorf("got: %t, want: %t with @ %s", got, test.expect, string(test.mac))
+		}
+	}
+}
+
+func TestNormalize(t *testing.T) {
+	type table struct {
+		mac []byte
+		expect []byte
+	}
+
+	tests := []table{
+		{[]byte("aa-bc-12-12-12"), []byte("AA:BC:12:12:12")},
+	}
+
+	for _, test := range tests {
+		got, err := normalize(test.mac)
+
+		if err != nil {
+			t.Errorf("error while normalizing: %s", err)
+		}
+
+		if reflect.DeepEqual(got, test.expect) {
+			t.Errorf("got: %s, want: %s", string(got), string(test.expect))
+		}
+	}
+}
