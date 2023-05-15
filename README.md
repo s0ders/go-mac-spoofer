@@ -1,3 +1,4 @@
+<img alt="go version badge" src="https://img.shields.io/github/go-mod/go-version/s0ders/go-mac-spoofer"> <img alt="go report card" src="http://goreportcard.com/badge/github.com/s0ders/go-mac-spoofer"> <img alt="license badge" src="https://img.shields.io/github/license/s0ders/go-mac-spoofer">
 ## Go MAC Spoofer
 
 Open source tool written in Go to spoof a NIC MAC address on Windows, MacOS and Linux.

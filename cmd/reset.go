@@ -14,7 +14,7 @@ func init() {
 
 var resetCmd = &cobra.Command{
 	Use:   "reset INTERFACE",
-	Short: "Attemps to change a NIC MAC address back to its factory value",
+	Short: "Attempts to change a NIC MAC address back to its factory value",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := []byte(args[0])

@@ -24,11 +24,9 @@ type NIC struct {
 
 // List returns a slice with the name and address of each available NICs.
 func List() ([]NIC, error) {
-	platform := runtime.GOOS
-
 	nics := make([]NIC, 0)
 
-	switch platform {
+	switch PLATFORM {
 	case "darwin":
 		NICNameRegex := regexp.MustCompile(`Device: ([a-z0-9]+)`)
 		NICAddressRegex := regexp.MustCompile(`Ethernet Address: ([a-z0-9]{2}\:[a-z0-9]{2}\:[a-z0-9]{2}\:[a-z0-9]{2}\:[a-z0-9]{2}\:[a-z0-9]{2})`)
@@ -52,6 +50,10 @@ func List() ([]NIC, error) {
 
 			nics = append(nics, NIC{name, address})
 		}
+	case "linux":
+
+	default:
+		return []NIC{}, fmt.Errorf("unknown platform: %s", PLATFORM)
 	}
 
 	return nics, nil
@@ -74,7 +76,7 @@ func Exists(nicName []byte) (bool, error) {
 	return false, nil
 }
 
-// ChangeMAC attemps to change a NIC MAC address.
+// ChangeMAC attempts to change a NIC MAC address.
 func ChangeMAC(nicName, newMAC []byte) error {
 	var err error
 
@@ -128,7 +130,7 @@ func ChangeMAC(nicName, newMAC []byte) error {
 	return nil
 }
 
-// ResetMAC attemps to reset a NIC MAC address to its factory value
+// ResetMAC attempts to reset a NIC MAC address to its factory value
 func ResetMAC(name []byte) error {
 
 	exists, err := Exists(name)

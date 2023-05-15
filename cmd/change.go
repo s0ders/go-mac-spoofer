@@ -24,7 +24,7 @@ func init() {
 var changeCmd = &cobra.Command{
 	Use:     "spoof INTERFACE",
 	Aliases: []string{"change"},
-	Short:   "Attemps to spoof an NIC MAC address",
+	Short:   "Attempts to spoof an NIC MAC address",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
