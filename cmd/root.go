@@ -6,9 +6,9 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "mac-spoofer",
-		Short: "mac-spoofer - a simple CLI to spoof MAC address",
-		Long:  "mac-spoofer - open source CLI built in Go to spoof a NIC MAC address on Windows, MacOS and Linux",
+		Use:   "go-mac-spoofer",
+		Short: "go-mac-spoofer - a simple CLI to spoof MAC address",
+		Long:  "go-mac-spoofer - open source CLI built in Go to spoof a NIC MAC address on Windows, MacOS and Linux",
 	}
 )
 
