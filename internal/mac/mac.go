@@ -3,29 +3,31 @@ package mac
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 var (
-	validMACRegex = regexp.MustCompile(`^([0-9A-Fa-f]{2}[\:\-]?){5}[0-9A-Fa-f]{2}$`)
+	ValidAddress = regexp.MustCompile(`^([0-9A-Fa-f]{2}[\:\-]{1}){5}[0-9A-Fa-f]{2}$`)
 )
 
 // Validate checks if the given slice of bytes if a valid MAC address.
-func validate(mac []byte) bool {
-	return validMACRegex.Match(mac)
+func Validate(mac []byte) bool {
+	return ValidAddress.Match(mac)
 }
 
 // Normalize convert a given MAC address into and uppercase format with a collon as separator.
-func normalize(mac []byte) ([]byte, error) {
-	if !validate(mac) {
+func Normalize(mac []byte) ([]byte, error) {
+	if !Validate(mac) {
 		return []byte{}, fmt.Errorf("cannot normalize an invalid mac address")
 	}
 
 	// Replace "-" separator with ":"
 	mac = bytes.ReplaceAll(mac, []byte{0x2d}, []byte{0x3a})
 
-	// Replace lowercase char. to uppercase
+	// Replace lowercase characters to uppercase
 	mac = bytes.ReplaceAll(mac, []byte{0x61}, []byte{0x41})
 	mac = bytes.ReplaceAll(mac, []byte{0x62}, []byte{0x42})
 	mac = bytes.ReplaceAll(mac, []byte{0x63}, []byte{0x43})
@@ -54,4 +56,22 @@ func normalize(mac []byte) ([]byte, error) {
 	mac = bytes.ReplaceAll(mac, []byte{0x7a}, []byte{0x5a})
 
 	return mac, nil
+}
+
+func Rand() (string, error) {
+	randBytes := make([]byte, 6)
+
+	_, err := rand.Read(randBytes)
+
+	if err != nil {
+		return "", err
+	}
+
+	randMac := fmt.Sprintf("%x", randBytes[0])
+
+	for i := 1; i < 6; i ++ {
+		randMac = strings.Join([]string{randMac, fmt.Sprintf("%02x", randBytes[i])}, ":")
+	}
+
+	return randMac, nil
 }

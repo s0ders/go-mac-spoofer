@@ -2,12 +2,14 @@
 package nic
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
-	"reflect"
 	"regexp"
 	"runtime"
+
+	"github.com/s0ders/go-mac-spoofer/internal/mac"
 )
 
 var (
@@ -19,7 +21,7 @@ type NIC struct {
 	Address []byte
 }
 
-// List() returns a slice with the name of each available NICs.
+// List() returns a slice with the name and address of each available NICs.
 func List() ([]NIC, error) {
 	platform := runtime.GOOS
 
@@ -40,7 +42,14 @@ func List() ([]NIC, error) {
 		addressMatches := NICAddressRegex.FindAllSubmatch(cmd, -1)
 
 		for i := range nameMatches {
-			nics = append(nics, NIC{nameMatches[i][1], addressMatches[i][1]})
+			name := nameMatches[i][1]
+			address, err := mac.Normalize(addressMatches[i][1])
+
+			if err != nil {
+				return nil, fmt.Errorf("could not normalize NIC address: %w", err)
+			}
+
+			nics = append(nics, NIC{name, address})
 		}
 	}
 
@@ -56,7 +65,7 @@ func Exists(nicName []byte) (bool, error) {
 	}
 
 	for _, existingNic := range existing {
-		if reflect.DeepEqual(existingNic, nicName) {
+		if string(existingNic.Name) == string(nicName) {
 			return true, nil
 		}
 	}
@@ -65,41 +74,52 @@ func Exists(nicName []byte) (bool, error) {
 }
 
 // ChangeMAC attemps to change a NIC MAC address.
-func ChangeMAC(nicName, newMac []byte) error {
+func ChangeMAC(nicName, newMAC []byte) error {
 	platform := runtime.GOOS
+	var err error
+
+	if !mac.Validate(newMAC) {
+		return fmt.Errorf("new MAC address \"%s\" is invalid", newMAC)
+	}
+
+	newMAC, err = mac.Normalize(newMAC)
+
+	if err != nil {
+		return err
+	}
 
 	switch platform {
 	case "darwin":
 
 		if os.Geteuid() != 0 {
-			log.Fatalf("Are you running this program as root ?")
+			log.Fatalf("This program must be executed as root (UID 0) to be able to change network card interface settings")
 		}
 
 		// Disassociate from wi-fi network without turning off wi-fi or the device
 		_, err := exec.Command(PATH_TO_AIRPORT, "-z").Output()
 
 		if err != nil {
-			log.Fatalf("error: %s", err.Error())
+			log.Fatalf("error happened while trying to invoke airport: %s", err.Error())
 		}
 
 		// Changing MAC address
-		_, err = exec.Command("ifconfig", string(nicName), "ether", string(newMac)).Output()
+		_, err = exec.Command("ifconfig", string(nicName), "ether", string(newMAC)).Output()
 
 		if err != nil {
-			log.Fatalf("error: %s", err.Error())
+			log.Fatalf("error happened while trying to invoke ifconfig: %s", err.Error())
 		}
 
 		// Restart airport on device to reassociate with known networks
 		_, err = exec.Command("networksetup", "-setairportpower", string(nicName), "off").Output()
 
 		if err != nil {
-			log.Fatalf("error: %s", err.Error())
+			log.Fatalf("error happened while trying to set airport power off: %s", err.Error())
 		}
 
 		_, err = exec.Command("networksetup", "-setairportpower", string(nicName), "on").Output()
 
 		if err != nil {
-			return err
+			log.Fatalf("error happened while trying to set airport power on: %s", err)
 		}
 
 		return nil
