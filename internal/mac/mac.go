@@ -27,7 +27,7 @@ func Normalize(mac []byte) ([]byte, error) {
 	// Replace "-" separator with ":"
 	mac = bytes.ReplaceAll(mac, []byte{0x2d}, []byte{0x3a})
 
-	// Replace lowercase characters to uppercase
+	// Replace lowercase characters to uppercase (yander but avoid needless conversions)
 	mac = bytes.ReplaceAll(mac, []byte{0x61}, []byte{0x41})
 	mac = bytes.ReplaceAll(mac, []byte{0x62}, []byte{0x42})
 	mac = bytes.ReplaceAll(mac, []byte{0x63}, []byte{0x43})
@@ -69,7 +69,7 @@ func Rand() (string, error) {
 
 	randMac := fmt.Sprintf("%x", randBytes[0])
 
-	for i := 1; i < 6; i ++ {
+	for i := 1; i < 6; i++ {
 		randMac = strings.Join([]string{randMac, fmt.Sprintf("%02x", randBytes[i])}, ":")
 	}
 

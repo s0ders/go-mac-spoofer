@@ -14,6 +14,7 @@ import (
 
 var (
 	PATH_TO_AIRPORT = "/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport"
+	PLATFORM        = runtime.GOOS
 )
 
 type NIC struct {
@@ -21,7 +22,7 @@ type NIC struct {
 	Address []byte
 }
 
-// List() returns a slice with the name and address of each available NICs.
+// List returns a slice with the name and address of each available NICs.
 func List() ([]NIC, error) {
 	platform := runtime.GOOS
 
@@ -75,7 +76,6 @@ func Exists(nicName []byte) (bool, error) {
 
 // ChangeMAC attemps to change a NIC MAC address.
 func ChangeMAC(nicName, newMAC []byte) error {
-	platform := runtime.GOOS
 	var err error
 
 	if !mac.Validate(newMAC) {
@@ -88,7 +88,7 @@ func ChangeMAC(nicName, newMAC []byte) error {
 		return err
 	}
 
-	switch platform {
+	switch PLATFORM {
 	case "darwin":
 
 		if os.Geteuid() != 0 {
@@ -123,6 +123,45 @@ func ChangeMAC(nicName, newMAC []byte) error {
 		}
 
 		return nil
+	}
+
+	return nil
+}
+
+// ResetMAC attemps to reset a NIC MAC address to its factory value
+func ResetMAC(name []byte) error {
+
+	exists, err := Exists(name)
+
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return fmt.Errorf("could not find a NIC named %s", string(name))
+	}
+
+	switch PLATFORM {
+	case "darwin":
+		nics, err := List()
+
+		if err != nil {
+			return err
+		}
+
+		var originalMAC []byte
+
+		for _, nic := range nics {
+			if string(nic.Name) == string(name) {
+				originalMAC = nic.Address
+			}
+		}
+
+		err = ChangeMAC(name, originalMAC)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

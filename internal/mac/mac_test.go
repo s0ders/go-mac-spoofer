@@ -6,7 +6,7 @@ import (
 
 func TestValidate(t *testing.T) {
 	type table struct {
-		mac []byte
+		mac     []byte
 		isValid bool
 	}
 
@@ -16,11 +16,11 @@ func TestValidate(t *testing.T) {
 		{[]byte("aa:10:89:ad:00:ff"), true},
 		{[]byte("FF:AB:CD:E4:80:90"), true},
 		{[]byte("FF-AB-CD-E4-80-90"), true},
-		{[]byte("fg:00:00:00:00:00"), false}, 		// out of range
-		{[]byte("ZZ-AB-CD-E4-80-90"), false},		// out of range
-		{[]byte("PM:AG:CD:E4:80:90"), false},		// out of range
-		{[]byte("aa:aa:aa:aa:aa"), false},			// too short
-		{[]byte("aa:aa:aa:aa:aa:aa:aa"), false},	// too long
+		{[]byte("fg:00:00:00:00:00"), false},    // out of range
+		{[]byte("ZZ-AB-CD-E4-80-90"), false},    // out of range
+		{[]byte("PM:AG:CD:E4:80:90"), false},    // out of range
+		{[]byte("aa:aa:aa:aa:aa"), false},       // too short
+		{[]byte("aa:aa:aa:aa:aa:aa:aa"), false}, // too long
 	}
 
 	for _, test := range tests {
@@ -33,7 +33,7 @@ func TestValidate(t *testing.T) {
 
 func TestNormalize(t *testing.T) {
 	type table struct {
-		mac []byte
+		mac    []byte
 		expect []byte
 	}
 
