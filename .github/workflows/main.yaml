@@ -53,19 +53,17 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Go Semver Release Dryrun
+    - name: Go Semver Release
       id: gosemver
       uses: s0ders/go-semver-release@v1.5.1
       with:
         repository-url: ${{ env.SEMVER_GIT_REPO_URL }}
         token: ${{ secrets.GIT_TOKEN }}
         tag-prefix: 'v'
-        dry-run: 'true'
-        verbose: 'true'
 
 
-    - name: Push Semver tag
-      if: ${{needs.pre-release-detection.outputs.release == 'true'}}
-      run: |
-        git tag -a ${{needs.pre-release-detection.outputs.semver}} -m "${{needs.pre-release-detection.outputs.semver}}"
-        git push origin ${{needs.pre-release-detection.outputs.semver}}
+    # - name: Push Semver tag
+    #   if: ${{needs.pre-release-detection.outputs.release == 'true'}}
+    #   run: |
+    #     git tag -a ${{needs.pre-release-detection.outputs.semver}} -m "${{needs.pre-release-detection.outputs.semver}}"
+    #     git push origin ${{needs.pre-release-detection.outputs.semver}}
