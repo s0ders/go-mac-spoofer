@@ -15,16 +15,16 @@ var (
 )
 
 func init() {
-	changeCmd.Flags().BoolVarP(&generateRandomAddress, "random", "r", false, "Use a pseudo-randomly generated MAC addresses")
-	changeCmd.Flags().StringVarP(&newMACAddress, "address", "a", "01:23:45:67:89:10", "The MAC address to spoof")
+	spoofCmd.Flags().BoolVarP(&generateRandomAddress, "random", "r", false, "Use a pseudo-randomly generated MAC addresses")
+	spoofCmd.Flags().StringVarP(&newMACAddress, "address", "a", "01:23:45:67:89:10", "The MAC address to spoof")
 
-	rootCmd.AddCommand(changeCmd)
+	rootCmd.AddCommand(spoofCmd)
 }
 
-var changeCmd = &cobra.Command{
+var spoofCmd = &cobra.Command{
 	Use:     "spoof INTERFACE",
 	Aliases: []string{"change"},
-	Short:   "Attempts to change an network interface MAC address",
+	Short:   "Attempts to spoof a network interface MAC address",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 

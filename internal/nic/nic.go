@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 
 	"github.com/s0ders/go-mac-spoofer/internal/mac"
 )
@@ -91,22 +92,22 @@ func List() ([]NetworkInterface, error) {
 			nics = append(nics, NetworkInterface{name, normalizedAddr})
 		}
 	default:
-		return []NetworkInterface{}, fmt.Errorf("unknown platform: %s", PLATFORM)
+		return nil, fmt.Errorf("unknown platform: %s", PLATFORM)
 	}
 
 	return nics, nil
 }
 
 // Exists checks if a given NIC exists on the system.
-func Exists(nicName string) (bool, error) {
+func Exists(name string) (bool, error) {
 	existing, err := List()
 
 	if err != nil {
 		return false, err
 	}
 
-	for _, existingNic := range existing {
-		if existingNic.Name == nicName {
+	for _, iface := range existing {
+		if iface.Name == name {
 			return true, nil
 		}
 	}
@@ -140,30 +141,92 @@ func ChangeMAC(interfaceName, newAddr string) error {
 		}
 
 		// Disassociate from wi-fi network without turning off wi-fi or the device
-		_, err := exec.Command(PATH_TO_AIRPORT, "-z").Output()
+		err = exec.Command(PATH_TO_AIRPORT, "-z").Run()
 
 		if err != nil {
 			log.Fatalf("error happened while trying to invoke airport: %s", err.Error())
 		}
 
 		// Changing MAC address
-		_, err = exec.Command("ifconfig", interfaceName, "ether", newAddr).Output()
+		err = exec.Command("ifconfig", interfaceName, "ether", newAddr).Run()
 
 		if err != nil {
 			log.Fatalf("error happened while trying to invoke ifconfig: %s", err.Error())
 		}
 
 		// Restart airport on device to reassociate with known networks
-		_, err = exec.Command("networksetup", "-setairportpower", interfaceName, "off").Output()
+		err = exec.Command("networksetup", "-setairportpower", interfaceName, "off").Run()
 
 		if err != nil {
 			log.Fatalf("error happened while trying to set airport power off: %s", err.Error())
 		}
 
-		_, err = exec.Command("networksetup", "-setairportpower", interfaceName, "on").Output()
+		err = exec.Command("networksetup", "-setairportpower", interfaceName, "on").Run()
 
 		if err != nil {
 			log.Fatalf("error happened while trying to set airport power on: %s", err)
+		}
+
+		return nil
+	case "linux":
+		if os.Geteuid() != 0 {
+			log.Fatalf("This program must be executed as root (UID 0) to be able to change network card interface settings")
+		}
+
+		// Get current connection
+		cmdOutput, err := exec.Command("nmcli", "-t", "-f", "NAME,DEVICE", "connection", "show", "--active").Output()
+
+		if err != nil {
+			return fmt.Errorf("failed to get a list of current active connection, are you using NetworkManager ?")
+		}
+
+		activeConnections := strings.Split(strings.TrimSpace(string(cmdOutput)), "\n")
+
+		var activeConnectionName string
+
+		if len(activeConnections) != 0 {
+
+
+			for _, activeConnection := range activeConnections {
+				fields := strings.Split(activeConnection, ":")
+				connectionName := fields[0]
+				connectionInterface := fields[1]
+
+				if interfaceName == connectionInterface {
+					activeConnectionName = connectionName
+				}
+			}
+
+			if err = exec.Command("nmcli", "connection", "down", "\"" + activeConnectionName + "\"").Run(); err != nil {
+				return fmt.Errorf("failed to disconnect interface from its network connection: %w", err)
+
+			}
+
+		}
+
+		err = exec.Command("ip", "link", "set", interfaceName, "down").Run()
+
+		if err != nil {
+			return fmt.Errorf("failed to set interface down: %w", err)
+		}
+
+		err = exec.Command("ip", "link", "set", interfaceName, "address", newAddr).Run()
+
+		if err != nil {
+			return fmt.Errorf("failed to change interface address: %w", err)
+		}
+
+		err = exec.Command("ip", "link", "set", interfaceName, "up").Run()
+
+		if err != nil {
+			return fmt.Errorf("failed to bring interface back up: %w", err)
+		}
+
+		if len(activeConnections) > 0 {
+			if err = exec.Command("nmcli", "connection", "up", "\"" + activeConnectionName + "\"").Run(); err != nil {
+				return fmt.Errorf("failed to connect interface back to its former network connection: %w", err)
+
+			}
 		}
 
 		return nil
