@@ -2,10 +2,13 @@
 package nic
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"runtime"
 
@@ -31,10 +34,11 @@ func List() ([]NIC, error) {
 		NICNameRegex := regexp.MustCompile(`Device: ([a-z0-9]+)`)
 		NICAddressRegex := regexp.MustCompile(`Ethernet Address: ([a-z0-9]{2}\:[a-z0-9]{2}\:[a-z0-9]{2}\:[a-z0-9]{2}\:[a-z0-9]{2}\:[a-z0-9]{2})`)
 
+		// List available interfaces and their MAC addresses
 		cmd, err := exec.Command("networksetup", "-listallhardwareports").Output()
 
 		if err != nil {
-			return []NIC{}, err
+			return nil, err
 		}
 
 		nameMatches := NICNameRegex.FindAllSubmatch(cmd, -1)
@@ -51,7 +55,37 @@ func List() ([]NIC, error) {
 			nics = append(nics, NIC{name, address})
 		}
 	case "linux":
+		nicNames := make([]string, 0)
 
+		// Get all interfaces available
+		filepath.Walk("/sys/class/net/", func(path string, info fs.FileInfo, err error) error {
+			nicNames = append(nicNames, info.Name())
+			return nil
+		})
+
+		// Get MAC address for each available interface
+		for _, name := range nicNames {
+			addressPath := "/sys/class/net" + name + "/address"
+
+			if _, err := os.Stat(addressPath); errors.Is(err, os.ErrNotExist) {
+				return nil, fmt.Errorf("could not get address for %s", name)
+			}
+
+			address, err := os.ReadFile(addressPath)
+
+			if err != nil {
+				return nil, fmt.Errorf("could not get address for %s", name)
+			}
+
+
+			address, err = mac.Normalize(address)
+
+			if err != nil {
+				return nil, fmt.Errorf("could not normalize address for interface %s", name)
+			}
+
+			nics = append(nics, NIC{[]byte(name), address})
+		}
 	default:
 		return []NIC{}, fmt.Errorf("unknown platform: %s", PLATFORM)
 	}

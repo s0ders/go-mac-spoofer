@@ -13,6 +13,34 @@ var (
 	ValidAddress = regexp.MustCompile(`^([0-9A-Fa-f]{2}[\:\-]{1}){5}[0-9A-Fa-f]{2}$`)
 )
 
+// Represents a MAC address, alias for [6]byte
+type mac [6]byte
+
+// Represents a vendor entity and its associated prefixes (as the IEEE database)
+type vendor struct {
+	name string
+	prefixes [][]byte
+}
+
+// Print a MAC address in readable format
+func (m *mac) toString() string {
+
+	macToString := byteToString(m[0])
+
+	for i := 1; i < 6; i++ {
+		macToString += ":" + byteToString(m[i])
+	}
+
+	return macToString
+}
+
+// Print a byte hex value and strips "0x" prefix
+func byteToString(b byte) string {
+	hexString := fmt.Sprintf("%02x", b)
+
+	return strings.Replace(hexString, "0x", "", 1)
+}
+
 // Validate checks if the given slice of bytes if a valid MAC address.
 func Validate(mac []byte) bool {
 	return ValidAddress.Match(mac)
@@ -74,4 +102,11 @@ func Rand() (string, error) {
 	}
 
 	return randMac, nil
+}
+
+func FromVendor(name string) {
+	apple := vendor{
+		name: "Apple, Inc.",
+		prefixes: [][]byte{{0x00, 0x03, 0x93}, {0x00, 0x0a, 0x27}},
+	}
 }
