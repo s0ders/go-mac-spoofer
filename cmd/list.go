@@ -15,7 +15,7 @@ func init() {
 var listCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
-	Short:   "List availables NIC and their MAC address",
+	Short:   "List availables network interfaces and their MAC addresses",
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		nics, err := nic.List()

@@ -13,7 +13,7 @@ func init() {
 
 var resetCmd = &cobra.Command{
 	Use:   "reset INTERFACE",
-	Short: "Attempts to change a NIC MAC address back to its factory value",
+	Short: "Attempts to change a network interface MAC address back to its original value",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]

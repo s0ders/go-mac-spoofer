@@ -10,7 +10,7 @@ var (
 		Use:   "go-mac-spoofer",
 		Version: version,
 		Short: "go-mac-spoofer - a simple CLI to spoof MAC address",
-		Long:  "go-mac-spoofer - open source CLI built in Go to spoof a NIC MAC address on Windows, MacOS and Linux",
+		Long:  "go-mac-spoofer - open source CLI to spoof network interfaces MAC addresses on Windows, macOS and Linux",
 	}
 )
 
