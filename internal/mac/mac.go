@@ -41,6 +41,11 @@ func Validate(mac string) bool {
 
 // Normalize convert a given MAC address into and uppercase format with a collon as separator.
 func Normalize(mac string) (string, error) {
+
+	// Remove potential newlines and tabs
+	mac = strings.ReplaceAll(mac, "\n", "")
+	mac = strings.ReplaceAll(mac, "\t", "")
+
 	if !Validate(mac) {
 		return "", fmt.Errorf("cannot normalize an invalid mac address")
 	}
