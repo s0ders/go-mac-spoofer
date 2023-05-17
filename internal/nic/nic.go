@@ -133,7 +133,7 @@ func ChangeMAC(interfaceName, newAddr string) error {
 	case "darwin":
 
 		if os.Geteuid() != 0 {
-			log.Fatalf("This program must be executed as root (UID 0) to be able to change network card interface settings")
+			return fmt.Errorf("program must be executed as root (UID 0) to change NIC settings")
 		}
 
 		if _, err := os.Stat(PATH_TO_AIRPORT); errors.Is(err, os.ErrNotExist) {
@@ -144,33 +144,33 @@ func ChangeMAC(interfaceName, newAddr string) error {
 		err = exec.Command(PATH_TO_AIRPORT, "-z").Run()
 
 		if err != nil {
-			log.Fatalf("error happened while trying to invoke airport: %s", err.Error())
+			return fmt.Errorf("error happened while trying to invoke airport: %w", err)
 		}
 
 		// Changing MAC address
 		err = exec.Command("ifconfig", interfaceName, "ether", newAddr).Run()
 
 		if err != nil {
-			log.Fatalf("error happened while trying to invoke ifconfig: %s", err.Error())
+			return fmt.Errorf("error happened while trying to invoke ifconfig: %w", err)
 		}
 
 		// Restart airport on device to reassociate with known networks
 		err = exec.Command("networksetup", "-setairportpower", interfaceName, "off").Run()
 
 		if err != nil {
-			log.Fatalf("error happened while trying to set airport power off: %s", err.Error())
+			return fmt.Errorf("error happened while trying to set airport power off: %w", err)
 		}
 
 		err = exec.Command("networksetup", "-setairportpower", interfaceName, "on").Run()
 
 		if err != nil {
-			log.Fatalf("error happened while trying to set airport power on: %s", err)
+			return fmt.Errorf("error happened while trying to set airport power on: %w", err)
 		}
 
 		return nil
 	case "linux":
 		if os.Geteuid() != 0 {
-			log.Fatalf("This program must be executed as root (UID 0) to be able to change network card interface settings")
+			return fmt.Errorf("program must be executed as root (UID 0) to change NIC settings")
 		}
 
 		// Get current connection
@@ -228,7 +228,6 @@ func ChangeMAC(interfaceName, newAddr string) error {
 
 			}
 		}
-
 		return nil
 	}
 

@@ -21,7 +21,7 @@ var resetCmd = &cobra.Command{
 		err := nic.ResetMAC(name)
 
 		if err != nil {
-			fmt.Printf("failed to reset MAC: %s", err)
+			fmt.Printf("failed to reset MAC: %s\n", err)
 		}
 
 		fmt.Printf("successfully reset %s MAC address\n", string(name))

@@ -37,7 +37,7 @@ var spoofCmd = &cobra.Command{
 			newAddr = randMAC
 
 			if err != nil {
-				log.Fatalf("could not generate random address: %s", err)
+				log.Fatalf("could not generate random address: %s\n", err)
 			}
 		} else {
 			newAddr = newMACAddress
@@ -49,7 +49,7 @@ var spoofCmd = &cobra.Command{
 			log.Fatalf("failed to change address: %s\n", err)
 		}
 
-		fmt.Printf("successfully changed %s address to %s", string(nicName), string(newAddr))
+		fmt.Printf("successfully changed %s address to %s\n", string(nicName), string(newAddr))
 
 	},
 }
