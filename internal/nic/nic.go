@@ -20,14 +20,14 @@ var (
 	PLATFORM        = runtime.GOOS
 )
 
-type NIC struct {
-	Name    []byte
-	Address []byte
+type NetworkInterface struct {
+	Name    string
+	Address string
 }
 
 // List returns a slice with the name and address of each available NICs.
-func List() ([]NIC, error) {
-	nics := make([]NIC, 0)
+func List() ([]NetworkInterface, error) {
+	nics := make([]NetworkInterface, 0)
 
 	switch PLATFORM {
 	case "darwin":
@@ -41,8 +41,8 @@ func List() ([]NIC, error) {
 			return nil, err
 		}
 
-		nameMatches := NICNameRegex.FindAllSubmatch(cmd, -1)
-		addressMatches := NICAddressRegex.FindAllSubmatch(cmd, -1)
+		nameMatches := NICNameRegex.FindAllStringSubmatch(string(cmd), -1)
+		addressMatches := NICAddressRegex.FindAllStringSubmatch(string(cmd), -1)
 
 		for i := range nameMatches {
 			name := nameMatches[i][1]
@@ -52,7 +52,7 @@ func List() ([]NIC, error) {
 				return nil, fmt.Errorf("could not normalize NIC address: %w", err)
 			}
 
-			nics = append(nics, NIC{name, address})
+			nics = append(nics, NetworkInterface{name, address})
 		}
 	case "linux":
 		nicNames := make([]string, 0)
@@ -65,36 +65,40 @@ func List() ([]NIC, error) {
 
 		// Get MAC address for each available interface
 		for _, name := range nicNames {
-			addressPath := "/sys/class/net" + name + "/address"
 
-			if _, err := os.Stat(addressPath); errors.Is(err, os.ErrNotExist) {
+			if name == "net" {
+				continue
+			}
+
+			addrPath := "/sys/class/net/" + name + "/address"
+
+			if _, err := os.Stat(addrPath); errors.Is(err, os.ErrNotExist) {
 				return nil, fmt.Errorf("could not get address for %s", name)
 			}
 
-			address, err := os.ReadFile(addressPath)
+			addr, err := os.ReadFile(addrPath)
 
 			if err != nil {
 				return nil, fmt.Errorf("could not get address for %s", name)
 			}
 
-
-			address, err = mac.Normalize(address)
+			normalizedAddr, err := mac.Normalize(string(addr))
 
 			if err != nil {
 				return nil, fmt.Errorf("could not normalize address for interface %s", name)
 			}
 
-			nics = append(nics, NIC{[]byte(name), address})
+			nics = append(nics, NetworkInterface{name, normalizedAddr})
 		}
 	default:
-		return []NIC{}, fmt.Errorf("unknown platform: %s", PLATFORM)
+		return []NetworkInterface{}, fmt.Errorf("unknown platform: %s", PLATFORM)
 	}
 
 	return nics, nil
 }
 
 // Exists checks if a given NIC exists on the system.
-func Exists(nicName []byte) (bool, error) {
+func Exists(nicName string) (bool, error) {
 	existing, err := List()
 
 	if err != nil {
@@ -102,7 +106,7 @@ func Exists(nicName []byte) (bool, error) {
 	}
 
 	for _, existingNic := range existing {
-		if string(existingNic.Name) == string(nicName) {
+		if existingNic.Name == nicName {
 			return true, nil
 		}
 	}
@@ -110,15 +114,15 @@ func Exists(nicName []byte) (bool, error) {
 	return false, nil
 }
 
-// ChangeMAC attempts to change a NIC MAC address.
-func ChangeMAC(nicName, newMAC []byte) error {
+// ChangeMAC attempts to change a network interface MAC address.
+func ChangeMAC(interfaceName, newAddr string) error {
 	var err error
 
-	if !mac.Validate(newMAC) {
-		return fmt.Errorf("new MAC address \"%s\" is invalid", newMAC)
+	if !mac.Validate(newAddr) {
+		return fmt.Errorf("new address \"%s\" is invalid", newAddr)
 	}
 
-	newMAC, err = mac.Normalize(newMAC)
+	newAddr, err = mac.Normalize(newAddr)
 
 	if err != nil {
 		return err
@@ -131,6 +135,10 @@ func ChangeMAC(nicName, newMAC []byte) error {
 			log.Fatalf("This program must be executed as root (UID 0) to be able to change network card interface settings")
 		}
 
+		if _, err := os.Stat(PATH_TO_AIRPORT); errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("cannot change address on macOS without airport")
+		}
+
 		// Disassociate from wi-fi network without turning off wi-fi or the device
 		_, err := exec.Command(PATH_TO_AIRPORT, "-z").Output()
 
@@ -139,20 +147,20 @@ func ChangeMAC(nicName, newMAC []byte) error {
 		}
 
 		// Changing MAC address
-		_, err = exec.Command("ifconfig", string(nicName), "ether", string(newMAC)).Output()
+		_, err = exec.Command("ifconfig", interfaceName, "ether", newAddr).Output()
 
 		if err != nil {
 			log.Fatalf("error happened while trying to invoke ifconfig: %s", err.Error())
 		}
 
 		// Restart airport on device to reassociate with known networks
-		_, err = exec.Command("networksetup", "-setairportpower", string(nicName), "off").Output()
+		_, err = exec.Command("networksetup", "-setairportpower", interfaceName, "off").Output()
 
 		if err != nil {
 			log.Fatalf("error happened while trying to set airport power off: %s", err.Error())
 		}
 
-		_, err = exec.Command("networksetup", "-setairportpower", string(nicName), "on").Output()
+		_, err = exec.Command("networksetup", "-setairportpower", interfaceName, "on").Output()
 
 		if err != nil {
 			log.Fatalf("error happened while trying to set airport power on: %s", err)
@@ -165,7 +173,7 @@ func ChangeMAC(nicName, newMAC []byte) error {
 }
 
 // ResetMAC attempts to reset a NIC MAC address to its factory value
-func ResetMAC(name []byte) error {
+func ResetMAC(name string) error {
 
 	exists, err := Exists(name)
 
@@ -180,20 +188,20 @@ func ResetMAC(name []byte) error {
 	switch PLATFORM {
 	case "darwin":
 		nics, err := List()
-		
+
 		if err != nil {
 			return err
 		}
 
-		var originalMAC []byte
+		var originalAddr string
 
 		for _, nic := range nics {
-			if string(nic.Name) == string(name) {
-				originalMAC = nic.Address
+			if nic.Name == name {
+				originalAddr = nic.Address
 			}
 		}
 
-		err = ChangeMAC(name, originalMAC)
+		err = ChangeMAC(name, originalAddr)
 
 		if err != nil {
 			return err

@@ -6,21 +6,21 @@ import (
 
 func TestValidate(t *testing.T) {
 	type table struct {
-		mac     []byte
+		mac     string
 		isValid bool
 	}
 
 	tests := []table{
-		{[]byte("00-00-00-00-00-00"), true},
-		{[]byte("00:00:00:00:00:00"), true},
-		{[]byte("aa:10:89:ad:00:ff"), true},
-		{[]byte("FF:AB:CD:E4:80:90"), true},
-		{[]byte("FF-AB-CD-E4-80-90"), true},
-		{[]byte("fg:00:00:00:00:00"), false},    // out of range
-		{[]byte("ZZ-AB-CD-E4-80-90"), false},    // out of range
-		{[]byte("PM:AG:CD:E4:80:90"), false},    // out of range
-		{[]byte("aa:aa:aa:aa:aa"), false},       // too short
-		{[]byte("aa:aa:aa:aa:aa:aa:aa"), false}, // too long
+		{"00-00-00-00-00-00", true},
+		{"00:00:00:00:00:00", true},
+		{"aa:10:89:ad:00:ff", true},
+		{"FF:AB:CD:E4:80:90", true},
+		{"FF-AB-CD-E4-80-90", true},
+		{"fg:00:00:00:00:00", false},    // out of range
+		{"ZZ-AB-CD-E4-80-90", false},    // out of range
+		{"PM:AG:CD:E4:80:90", false},    // out of range
+		{"aa:aa:aa:aa:aa", false},       // too short
+		{"aa:aa:aa:aa:aa:aa:aa", false}, // too long
 	}
 
 	for _, test := range tests {
@@ -33,14 +33,14 @@ func TestValidate(t *testing.T) {
 
 func TestNormalize(t *testing.T) {
 	type table struct {
-		mac    []byte
-		expect []byte
+		mac    string
+		expect string
 	}
 
 	tests := []table{
-		{[]byte("aa-bc-dc-12-12-12"), []byte("AA:BC:DC:12:12:12")},
-		{[]byte("aa:bc:dc:12:12:12"), []byte("AA:BC:DC:12:12:12")},
-		{[]byte("AA:BC:DC:12:12:12"), []byte("AA:BC:DC:12:12:12")},
+		{"aa-bc-dc-12-12-12", "AA:BC:DC:12:12:12"},
+		{"aa:bc:dc:12:12:12", "AA:BC:DC:12:12:12"},
+		{"AA:BC:DC:12:12:12", "AA:BC:DC:12:12:12"},
 	}
 
 	for _, test := range tests {
@@ -63,7 +63,7 @@ func TestRand(t *testing.T) {
 		t.Errorf("error while generating random MAC: %s", err)
 	}
 
-	isValid := Validate([]byte(randMAC))
+	isValid := Validate(randMAC)
 
 	if !isValid {
 		t.Errorf("Generated an invalid random MAC address")

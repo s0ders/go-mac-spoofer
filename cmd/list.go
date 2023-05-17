@@ -25,9 +25,9 @@ var listCmd = &cobra.Command{
 			os.Exit(-1)
 		}
 
-		fmt.Printf("%-10s %-17s\n\n", "Name", "Address")
+		fmt.Printf("%-17s %-17s\n\n", "NAME", "ADDRESS")
 		for _, nic := range nics {
-			fmt.Printf("%-10s %-17s\n", nic.Name, nic.Address)
+			fmt.Printf("%-17s %-17s\n", nic.Name, nic.Address)
 		}
 	},
 }

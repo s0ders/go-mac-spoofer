@@ -28,28 +28,28 @@ var changeCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		nicName := []byte(args[0])
-		var newMAC []byte
+		nicName := args[0]
+		var newAddr string
 
 		if generateRandomAddress || len(newMACAddress) == 0 {
 			randMAC, err := mac.Rand()
 
-			newMAC = []byte(randMAC)
+			newAddr = randMAC
 
 			if err != nil {
 				log.Fatalf("could not generate random address: %s", err)
 			}
 		} else {
-			newMAC = []byte(newMACAddress)
+			newAddr = newMACAddress
 		}
 
-		err := nic.ChangeMAC(nicName, newMAC)
+		err := nic.ChangeMAC(nicName, newAddr)
 
 		if err != nil {
 			log.Fatalf("failed to change address: %s\n", err)
 		}
 
-		fmt.Printf("Successfully changed %s address to %s", string(nicName), string(newMAC))
+		fmt.Printf("successfully changed %s address to %s", string(nicName), string(newAddr))
 
 	},
 }
