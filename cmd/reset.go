@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/s0ders/go-mac-spoofer/internal/nic"
 	"github.com/spf13/cobra"
@@ -22,7 +21,7 @@ var resetCmd = &cobra.Command{
 		err := nic.ResetMAC(name)
 
 		if err != nil {
-			log.Fatalf("%s", err)
+			fmt.Printf("failed to reset MAC: %s", err)
 		}
 
 		fmt.Printf("Successfully reset %s MAC address\n", string(name))

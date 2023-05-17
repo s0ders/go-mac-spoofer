@@ -21,7 +21,7 @@ var listCmd = &cobra.Command{
 		nics, err := nic.List()
 
 		if err != nil {
-			fmt.Printf("Could not list NICs")
+			fmt.Printf("failed to list interfaces: %s\n", err)
 			os.Exit(-1)
 		}
 

@@ -180,7 +180,7 @@ func ResetMAC(name []byte) error {
 	switch PLATFORM {
 	case "darwin":
 		nics, err := List()
-
+		
 		if err != nil {
 			return err
 		}

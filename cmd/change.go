@@ -46,10 +46,10 @@ var changeCmd = &cobra.Command{
 		err := nic.ChangeMAC(nicName, newMAC)
 
 		if err != nil {
-			log.Fatalf("failed to change MAC: %s", err)
+			log.Fatalf("failed to change address: %s\n", err)
 		}
 
-		fmt.Printf("Successfully changed %s MAC to %s", string(nicName), string(newMAC))
+		fmt.Printf("Successfully changed %s address to %s", string(nicName), string(newMAC))
 
 	},
 }
